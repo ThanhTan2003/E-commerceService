@@ -18,7 +18,7 @@ spec:
       containers:
         - env:
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://postgres-product:5432/product-service
+              value: jdbc:postgresql://postgres-product:5432/product-service # Sử dụng cổng 5431 cho postgres-product
             - name: SPRING_PROFILES_ACTIVE
               value: docker
           image: thanhtantg2003/product-service:latest
@@ -42,5 +42,4 @@ spec:
       targetPort: 8081
   selector:
     app: product-service
-status:
-  loadBalancer: {}
+status: {}

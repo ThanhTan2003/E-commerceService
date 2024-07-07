@@ -27,7 +27,7 @@ spec:
           image: postgres
           name: postgres-order
           ports:
-            - containerPort: 5432
+            - containerPort: 5432 # Sử dụng cổng 5432 cho postgres-order
           resources: {}
           volumeMounts:
             - mountPath: /data/postgres

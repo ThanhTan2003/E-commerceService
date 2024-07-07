@@ -18,13 +18,13 @@ spec:
       containers:
         - env:
             - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
-              value: 'TRACE'
+              value: ' TRACE'
             - name: SPRING_PROFILES_ACTIVE
               value: docker
           image: thanhtantg2003/api-gateway:latest
           name: api-gateway
           ports:
-            - containerPort: 8080
+            - containerPort: 8181
           resources: {}
       restartPolicy: Always
 status: {}
@@ -38,8 +38,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - name: "8080"
-      port: 8080
+    - name: "8181"
+      port: 8181
       targetPort: 8080
   selector:
     app: api-gateway

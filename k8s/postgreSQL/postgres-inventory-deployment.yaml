@@ -27,7 +27,7 @@ spec:
           image: postgres
           name: postgres-inventory
           ports:
-            - containerPort: 5432
+            - containerPort: 5432 # Sử dụng cổng 5433 cho postgres-inventory
           resources: {}
           volumeMounts:
             - mountPath: /data/postgres
@@ -47,8 +47,8 @@ metadata:
   name: postgres-inventory
 spec:
   ports:
-    - name: "5433"
-      port: 5433
+    - name: "5432"
+      port: 5432
       targetPort: 5432
   selector:
     app: postgres-inventory
