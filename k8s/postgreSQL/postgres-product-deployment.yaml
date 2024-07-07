@@ -1,8 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    app: postgres-product
   name: postgres-product
-  namespace: microservices
 spec:
   replicas: 1
   selector:
@@ -14,33 +15,57 @@ spec:
         app: postgres-product
     spec:
       containers:
-        - name: postgres
-          image: postgres:13
-          env:
+        - env:
+            - name: PGDATA
+              value: /data/postgres
             - name: POSTGRES_DB
               value: product-service
-            - name: POSTGRES_USER
-              value: postgres
             - name: POSTGRES_PASSWORD
               value: tranthanhtan
+            - name: POSTGRES_USER
+              value: postgres
+          image: postgres
+          name: postgres-product
           ports:
             - containerPort: 5432
+          resources: {}
           volumeMounts:
-            - name: postgres-storage
-              mountPath: /var/lib/postgresql/data
+            - mountPath: /data/postgres
+              name: postgres-product-claim0
+      restartPolicy: Always
       volumes:
-        - name: postgres-storage
-          emptyDir: {}
+        - name: postgres-product-claim0
+          persistentVolumeClaim:
+            claimName: postgres-product-claim0
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  labels:
+    app: postgres-product
   name: postgres-product
-  namespace: microservices
 spec:
+  ports:
+    - name: "5431"
+      port: 5431
+      targetPort: 5432
   selector:
     app: postgres-product
-  ports:
-    - protocol: TCP
-      port: 5432
-      targetPort: 5432
+status:
+  loadBalancer: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    app: postgres-product-claim0
+  name: postgres-product-claim0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}

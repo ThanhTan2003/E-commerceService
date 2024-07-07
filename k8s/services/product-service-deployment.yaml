@@ -1,42 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    app: product-service
   name: product-service
-  namespace: microservices
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: product-service
+  strategy: {}
   template:
     metadata:
       labels:
         app: product-service
     spec:
       containers:
-        - name: product-service
-          image: thanhtantg2003/product-service
-          ports:
-            - containerPort: 8081
-          env:
+        - env:
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres-product:5432/product-service
-            - name: SPRING_DATASOURCE_USERNAME
-              value: postgres
-            - name: SPRING_DATASOURCE_PASSWORD
-              value: TranThanhTan.7411
-            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-              value: http://discovery-server:8761/eureka
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+          image: thanhtantg2003/product-service:latest
+          name: product-service
+          ports:
+            - containerPort: 8081
+          resources: {}
+      restartPolicy: Always
+status: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: product-service
-  namespace: microservices
-spec:
-  selector:
+  labels:
     app: product-service
+  name: product-service
+spec:
   ports:
-    - protocol: TCP
+    - name: "8081"
       port: 8081
       targetPort: 8081
+  selector:
+    app: product-service
+status:
+  loadBalancer: {}

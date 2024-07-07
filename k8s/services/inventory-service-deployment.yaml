@@ -1,42 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  labels:
+    app: inventory-service
   name: inventory-service
-  namespace: microservices
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: inventory-service
+  strategy: {}
   template:
     metadata:
       labels:
         app: inventory-service
     spec:
       containers:
-        - name: inventory-service
-          image: thanhtantg2003/inventory-service
-          ports:
-            - containerPort: 8083
-          env:
+        - env:
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres-inventory:5432/inventory-service
-            - name: SPRING_DATASOURCE_USERNAME
-              value: postgres
-            - name: SPRING_DATASOURCE_PASSWORD
-              value: TranThanhTan.7411
-            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-              value: http://discovery-server:8761/eureka
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+          image: thanhtantg2003/inventory-service:latest
+          name: inventory-service
+          ports:
+            - containerPort: 8083
+          resources: {}
+      restartPolicy: Always
+status: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: inventory-service
-  namespace: microservices
-spec:
-  selector:
+  labels:
     app: inventory-service
+  name: inventory-service
+spec:
   ports:
-    - protocol: TCP
+    - name: "8083"
       port: 8083
       targetPort: 8083
+  selector:
+    app: inventory-service
+status:
+  loadBalancer: {}
