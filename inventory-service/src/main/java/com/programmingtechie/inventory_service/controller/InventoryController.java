@@ -37,9 +37,8 @@ public class InventoryController
 
     @PostMapping("/update_quantity")
     @ResponseStatus(HttpStatus.OK)
-    public void updateQuantity(@RequestParam String skuCode, @RequestParam Integer quantity) {
-
-
+    public void updateQuantity(@RequestParam String skuCode, @RequestParam Integer quantity)
+    {
         inventoryService.updateQuantity(skuCode, quantity);
     }
 

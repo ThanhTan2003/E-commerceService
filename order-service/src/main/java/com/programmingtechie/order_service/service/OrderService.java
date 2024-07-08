@@ -26,7 +26,7 @@ public class OrderService
 {
     final OrderRepository orderRepository;
     final WebClient.Builder webClientBuilder;
-    final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
+    //final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     public String placeOrder(OrderRequest orderRequest)
     {

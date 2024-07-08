@@ -133,6 +133,7 @@ public class InventoryService
         ShipmentHistoryDto shipmentHistory = ShipmentHistoryDto.builder()
                 .skuCode(skuCode)
                 .quantity(quantity)
+
                 .build();
         shipmentHistoryService.createShipmentHistory(shipmentHistory);
     }
