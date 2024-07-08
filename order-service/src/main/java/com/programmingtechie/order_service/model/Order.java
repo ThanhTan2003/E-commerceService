@@ -23,17 +23,18 @@ public class Order
     @Column(length = 36)
     private String id;
 
-    @Column(nullable = false, length = 36)
+    @Column(length = 36)
     private String customerId;
 
     @Column(nullable = false)
     private LocalDateTime orderDate;
 
-    @Column(nullable = false)
+    @Column(length = 100)
     private String status;
 
-    @Column(nullable = false)
     private BigDecimal totalAmount;
+
+    private String note;
 
     @OneToMany(cascade = CascadeType.ALL)
     private List<OrderLineItems> orderLineItems;

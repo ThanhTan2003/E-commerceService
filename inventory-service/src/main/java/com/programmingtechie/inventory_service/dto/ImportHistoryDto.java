@@ -1,19 +1,20 @@
-package com.programmingtechie.order_service.dto;
+package com.programmingtechie.inventory_service.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Data
-public class OrderLineItemsDto
+public class ImportHistoryDto
 {
-    private Long id;
     private String skuCode;
-    private BigDecimal price;
     private Integer quantity;
+    private LocalDateTime date;
     private String note;
 }

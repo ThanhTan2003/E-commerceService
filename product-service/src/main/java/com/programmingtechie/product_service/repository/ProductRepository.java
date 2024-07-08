@@ -4,6 +4,8 @@ import com.programmingtechie.product_service.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
+import java.util.List;
+
 @RepositoryRestResource
 // Danh dau interface ProductRepository la mot REST repository.
 // Annotation nay duoc su dung de cau hinh cac endpoint RESTful cho repository,
@@ -11,6 +13,8 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
 public interface ProductRepository extends JpaRepository<Product, String> {
 
+    List<Product> findBySkuCodeIn(List<String> skuCode);
+    boolean existsBySkuCode(String skuCode);
 }
 
 // JpaRepository<Product, String>: La mot generic interface cua Spring Data JPA.

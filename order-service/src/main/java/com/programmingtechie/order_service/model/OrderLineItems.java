@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @AllArgsConstructor
@@ -17,9 +18,24 @@ import java.math.BigDecimal;
 public class OrderLineItems
 {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(length = 36)
+    private String id;
+
+    @Column(nullable = false, length = 100)
     private String skuCode;
+
+    @Column(length = 36)
+    private String customer_id;
+
     private BigDecimal price;
+
     private Integer quantity;
+
+    @PrePersist
+    private void ensureId()
+    {
+        if (this.id == null) {
+            this.id = UUID.randomUUID().toString();
+        }
+    }
 }

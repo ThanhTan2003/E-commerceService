@@ -1,5 +1,6 @@
 package com.programmingtechie.product_service.controller;
 
+import com.programmingtechie.product_service.dto.ProductExisting;
 import com.programmingtechie.product_service.dto.ProductRequest;
 import com.programmingtechie.product_service.dto.ProductResponse;
 import com.programmingtechie.product_service.repository.ProductRepository;
@@ -43,5 +44,12 @@ public class ProductController {
     public String deleteProduct(@PathVariable String id) {
         productService.deleteProduct(id);
         return String.format("Product %s is deleted", id);
+    }
+
+    @GetMapping("/existing")
+    @ResponseStatus(HttpStatus.OK)
+    public List<ProductExisting> isExisting(@RequestParam List<String> skuCode) {
+
+        return productService.isExisting(skuCode);
     }
 }

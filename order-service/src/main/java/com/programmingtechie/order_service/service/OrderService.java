@@ -26,52 +26,67 @@ public class OrderService
 {
     final OrderRepository orderRepository;
     final WebClient.Builder webClientBuilder;
-    final KafkaTemplate <String, OrderPlacedEvent> kafkaTemplate;
+    final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     public String placeOrder(OrderRequest orderRequest)
     {
-        Order order = new Order();
-
-
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsDtos()
                 .stream()
                 .map(orderLineItemsDto -> OrderLineItems.builder()
-                    .skuCode(orderLineItemsDto.getSkuCode())
-                    .price(orderLineItemsDto.getPrice())
-                    .quantity(orderLineItemsDto.getQuantity())
-                    .build()
-                ).toList();
+                        .skuCode(orderLineItemsDto.getSkuCode())
+                        .price(orderLineItemsDto.getPrice())
+                        .quantity(orderLineItemsDto.getQuantity())
+                        .build())
+                .toList();
 
-        order.setOrderLineItems(orderLineItems);
+        List<String> skuCodes = orderLineItems.stream()
+                .map(OrderLineItems::getSkuCode)
+                .toList();
 
-        List <String> skuCodes = order.getOrderLineItems()
-                .stream()
-                .map(
-                        OrderLineItems::getSkuCode
-                ).toList();
+        InventoryResponse[] inventoryResponseArray;
 
-        // Khoi tao WebClient va gui yeu cau GET
-        InventoryResponse[] inventoryResponseArray = webClientBuilder.build().get()
-                .uri("http://inventory-service/api/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
-                .retrieve()
-                .bodyToMono(InventoryResponse[].class)
-                .block();
-
-
-        assert inventoryResponseArray != null;
-        boolean allProductIsInStock = Arrays.stream(inventoryResponseArray)
-                .allMatch(
-                        InventoryResponse::isInStock
-                );
-
-        if(allProductIsInStock)
-        {
-            orderRepository.save(order);
-            //kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
-            return "Order placed successfully";
+        try {
+            inventoryResponseArray = webClientBuilder.build().get()
+                    .uri("http://inventory-service/api/inventory/is_in_stock",
+                            uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                    .retrieve()
+                    .bodyToMono(InventoryResponse[].class)
+                    .block();
+        } catch (Exception e) {
+            throw new IllegalStateException("Dịch vụ kiểm tra kho hàng không khả dụng. Vui lòng thử lại sau.");
         }
-        else
-            throw new IllegalArgumentException("Product is not in stock, please try again later");
+
+        if (inventoryResponseArray == null) {
+            throw new IllegalArgumentException("Không thể lấy thông tin kho hàng.");
+        }
+
+        boolean allProductIsInStock = Arrays.stream(inventoryResponseArray)
+                .allMatch(InventoryResponse::isInStock);
+
+        if (!allProductIsInStock) {
+            throw new IllegalArgumentException("Sản phẩm không có sẵn trong kho.");
+        }
+
+        Order order = Order.builder()
+                .orderLineItems(orderLineItems)
+                .build();
+
+        orderRepository.save(order);
+
+        updateInventory(orderLineItems);
+
+        return "Đặt hàng thành công";
+    }
+
+    private void updateInventory(List<OrderLineItems> orderLineItems) {
+        orderLineItems.forEach(item -> {
+            webClientBuilder.build().post()
+                    .uri("http://inventory-service/api/inventory/update_quantity",
+                            uriBuilder -> uriBuilder.queryParam("skuCode", item.getSkuCode())
+                                    .queryParam("quantity", item.getQuantity()).build())
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        });
     }
 }

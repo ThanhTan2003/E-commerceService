@@ -1,5 +1,6 @@
 package com.programmingtechie.product_service.service;
 
+import com.programmingtechie.product_service.dto.ProductExisting;
 import com.programmingtechie.product_service.dto.ProductRequest;
 import com.programmingtechie.product_service.dto.ProductResponse;
 import com.programmingtechie.product_service.model.Product;
@@ -7,6 +8,7 @@ import com.programmingtechie.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -101,5 +103,15 @@ public class ProductService {
             log.error("Product with ID {} not found", id);
             throw new IllegalArgumentException("Product with ID " + id + " not found");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductExisting> isExisting(List<String> skuCodes) {
+        return skuCodes.stream()
+                .map(skuCode -> {
+                    boolean exists = productRepository.existsBySkuCode(skuCode);
+                    return new ProductExisting(skuCode, exists);
+                })
+                .toList();
     }
 }
