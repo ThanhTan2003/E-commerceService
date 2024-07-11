@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/import_history")
+@RequestMapping("/api/inventory/import_history")
 @RequiredArgsConstructor
 @Slf4j
 public class ImportHistoryController

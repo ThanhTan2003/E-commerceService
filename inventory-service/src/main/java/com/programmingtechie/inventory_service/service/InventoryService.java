@@ -34,14 +34,10 @@ public class InventoryService
         return inventories.stream()
                 .map(inventory -> {
                     boolean inStock = inventory.getQuantity() > 0;
-
-                    if (!inStock) {
-                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sản phẩm " + inventory.getSkuCode() + " không có sẵn trong kho");
-                    }
-
                     return InventoryResponse.builder()
                             .skuCode(inventory.getSkuCode())
-                            .isInStock(true)
+                            .isInStock(inStock)
+                            .quantity(inventory.getQuantity()) // trả về số lượng tồn kho
                             .build();
                 })
                 .toList();
@@ -116,16 +112,15 @@ public class InventoryService
     }
 
 
-    public void updateQuantity(String skuCode, Integer quantity)
-    {
+    public void updateQuantity(String skuCode, Integer quantity) {
         Inventory inventory = inventoryRepository.findBySkuCode(skuCode);
 
         if (inventory == null) {
             throw new IllegalArgumentException("Không tìm thấy mã SkuCode trong kho");
         }
 
-        if (inventory.getQuantity() < quantity) {
-            throw new IllegalArgumentException("Số lượng trong kho không đủ");
+        if (quantity <= 0 || inventory.getQuantity() < quantity) {
+            throw new IllegalArgumentException("Số lượng trong kho không đủ hoặc số lượng không hợp lệ");
         }
 
         inventory.setQuantity(inventory.getQuantity() - quantity);
@@ -133,7 +128,6 @@ public class InventoryService
         ShipmentHistoryDto shipmentHistory = ShipmentHistoryDto.builder()
                 .skuCode(skuCode)
                 .quantity(quantity)
-
                 .build();
         shipmentHistoryService.createShipmentHistory(shipmentHistory);
     }

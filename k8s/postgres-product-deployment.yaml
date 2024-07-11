@@ -27,7 +27,7 @@ spec:
           image: postgres
           name: postgres-product
           ports:
-            - containerPort: 5432 # Sử dụng cổng 5431 cho postgres-product
+            - containerPort: 5432
           resources: {}
           volumeMounts:
             - mountPath: /data/postgres
@@ -52,7 +52,8 @@ spec:
       targetPort: 5432
   selector:
     app: postgres-product
-status: {}
+status:
+  loadBalancer: {}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

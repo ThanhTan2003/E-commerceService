@@ -28,8 +28,7 @@ public class OrderService
     final WebClient.Builder webClientBuilder;
     //final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
-    public String placeOrder(OrderRequest orderRequest)
-    {
+    public String placeOrder(OrderRequest orderRequest) {
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsDtos()
                 .stream()
                 .map(orderLineItemsDto -> OrderLineItems.builder()
@@ -60,11 +59,15 @@ public class OrderService
             throw new IllegalArgumentException("Không thể lấy thông tin kho hàng.");
         }
 
-        boolean allProductIsInStock = Arrays.stream(inventoryResponseArray)
-                .allMatch(InventoryResponse::isInStock);
+        for (OrderLineItems item : orderLineItems) {
+            InventoryResponse response = Arrays.stream(inventoryResponseArray)
+                    .filter(r -> r.getSkuCode().equals(item.getSkuCode()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm trong kho"));
 
-        if (!allProductIsInStock) {
-            throw new IllegalArgumentException("Sản phẩm không có sẵn trong kho.");
+            if (!response.isInStock() || response.getQuantity() < item.getQuantity()) {
+                throw new IllegalArgumentException("Sản phẩm " + item.getSkuCode() + " không đủ số lượng tồn kho.");
+            }
         }
 
         Order order = Order.builder()

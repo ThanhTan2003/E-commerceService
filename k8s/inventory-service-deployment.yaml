@@ -9,25 +9,23 @@ spec:
   selector:
     matchLabels:
       app: inventory-service
-  strategy: {}
   template:
     metadata:
       labels:
         app: inventory-service
     spec:
       containers:
-        - env:
-            - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://postgres-inventory:5432/inventory-service # Sử dụng cổng 5433 cho postgres-inventory
-            - name: SPRING_PROFILES_ACTIVE
-              value: docker
+        - name: inventory-service
           image: thanhtantg2003/inventory-service:latest
-          name: inventory-service
           ports:
             - containerPort: 8083
-          resources: {}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres-inventory:5432/inventory-service
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
       restartPolicy: Always
-status: {}
+
 ---
 apiVersion: v1
 kind: Service
@@ -37,9 +35,7 @@ metadata:
   name: inventory-service
 spec:
   ports:
-    - name: "8083"
-      port: 8083
+    - port: 8083
       targetPort: 8083
   selector:
     app: inventory-service
-status: {}

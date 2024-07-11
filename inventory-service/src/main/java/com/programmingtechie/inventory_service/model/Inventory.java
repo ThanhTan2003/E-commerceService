@@ -29,6 +29,9 @@ public class Inventory
     @Column(nullable = false)
     private Integer quantity;
 
+    @Version
+    private Long version; // Thêm trường version để kiểm soát phiên bản
+
     @OneToMany(mappedBy = "inventory", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<ImportHistory> importHistories = new ArrayList<>();

@@ -9,25 +9,22 @@ spec:
   selector:
     matchLabels:
       app: order-service
-  strategy: {}
   template:
     metadata:
       labels:
         app: order-service
     spec:
       containers:
-        - env:
+        - name: order-service
+          image: thanhtantg2003/order-service:latest
+          ports:
+            - containerPort: 8082
+          env:
             - name: SPRING_DATASOURCE_URL
               value: jdbc:postgresql://postgres-order:5432/order-service
             - name: SPRING_PROFILES_ACTIVE
               value: docker
-          image: thanhtantg2003/order-service:latest
-          name: order-service
-          ports:
-            - containerPort: 8082
-          resources: {}
       restartPolicy: Always
-status: {}
 ---
 apiVersion: v1
 kind: Service
@@ -37,9 +34,7 @@ metadata:
   name: order-service
 spec:
   ports:
-    - name: "8082"
-      port: 8082
+    - port: 8082
       targetPort: 8082
   selector:
     app: order-service
-status: {}
