@@ -128,6 +128,23 @@ public class InventoryService
         inventoryRepository.save(inventory);
     }
 
+    public void updateQuantityWithRetry(ShipmentHistoryDto shipmentHistoryDto) {
+        boolean updated = false;
+        int retryCount = 0;
+        while (!updated && retryCount < 3) {  // Thử lại tối đa 3 lần
+            try {
+                updateQuantity(shipmentHistoryDto);
+                updated = true;
+            } catch (OptimisticLockException e) {
+                retryCount++;
+                // Log hoặc xử lý thêm nếu cần
+            }
+        }
+        if (!updated) {
+            throw new IllegalStateException("Không thể cập nhật số lượng tồn kho sau nhiều lần thử. Vui lòng thử lại sau.");
+        }
+    }
+
 
     @Transactional
     public void updateQuantity(ShipmentHistoryDto shipmentHistoryDto) {

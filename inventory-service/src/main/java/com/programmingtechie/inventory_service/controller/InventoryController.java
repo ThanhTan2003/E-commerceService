@@ -38,9 +38,8 @@ public class InventoryController
 
     @PostMapping("/update_quantity")
     @ResponseStatus(HttpStatus.OK)
-    public void updateQuantity(@RequestBody ShipmentHistoryDto shipmentHistoryDto)
-    {
-        inventoryService.updateQuantity(shipmentHistoryDto);
+    public void updateQuantity(@RequestBody ShipmentHistoryDto shipmentHistoryDto) {
+        inventoryService.updateQuantityWithRetry(shipmentHistoryDto);
     }
 
     @PostMapping
