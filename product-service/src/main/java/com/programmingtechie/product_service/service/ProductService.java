@@ -109,8 +109,28 @@ public class ProductService {
     public List<ProductExisting> isExisting(List<String> skuCodes) {
         return skuCodes.stream()
                 .map(skuCode -> {
-                    boolean exists = productRepository.existsBySkuCode(skuCode);
-                    return new ProductExisting(skuCode, exists);
+                    Boolean exist = productRepository.existsBySkuCode(skuCode);
+                    ProductExisting productExisting;
+                    if(exist)
+                    {
+                        Product product = productRepository.findAllBySkuCode(skuCode);
+                        productExisting = ProductExisting.builder()
+                                .id(product.getId())
+                                .name(product.getName())
+                                .skuCode(product.getSkuCode())
+                                .isExisting(exist)
+                                .description(product.getDescription())
+                                .price(product.getPrice())
+                                .build();
+                    }
+                    else
+                    {
+                        productExisting = ProductExisting.builder()
+                                .skuCode(skuCode)
+                                .isExisting(exist)
+                                .build();
+                    }
+                    return productExisting;
                 })
                 .toList();
     }

@@ -7,7 +7,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Entity
@@ -25,8 +28,17 @@ public class ShipmentHistory
     @Column(nullable = false, length = 100)
     private String skuCode;
 
+    @Column(length = 100)
+    private String name;
+
     @Column(nullable = false)
     private Integer quantity;
+
+    @Column(precision = 19, scale = 4)
+    private BigDecimal unitPrice;
+
+    @Column(precision = 19, scale = 4)
+    private BigDecimal totalPrice;
 
     @Column(nullable = false)
     private LocalDateTime date;
@@ -34,18 +46,15 @@ public class ShipmentHistory
     @Column(length = 255)
     private String note;
 
-    @ManyToOne
-    @JoinColumn(name = "inventory_id", nullable = false)
-    @JsonBackReference
-    private Inventory inventory;
-
     @PrePersist
     private void ensureId() {
         if (this.id == null) {
             this.id = UUID.randomUUID().toString();
         }
         if (this.date == null) {
-            this.date = LocalDateTime.now();
+            // Lấy thời gian hiện tại ở múi giờ UTC+7
+            ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
+            this.date = zonedDateTime.toLocalDateTime();
         }
     }
 }

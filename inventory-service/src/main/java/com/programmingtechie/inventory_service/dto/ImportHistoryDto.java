@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class ImportHistoryDto
 {
     private String skuCode;
+    private String name;
     private Integer quantity;
     private LocalDateTime date;
     private String note;

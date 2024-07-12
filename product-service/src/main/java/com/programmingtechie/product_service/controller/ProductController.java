@@ -48,8 +48,8 @@ public class ProductController {
 
     @GetMapping("/existing")
     @ResponseStatus(HttpStatus.OK)
-    public List<ProductExisting> isExisting(@RequestParam List<String> skuCode) {
+    public List<ProductExisting> isExisting(@RequestParam List<String> skuCodes) {
 
-        return productService.isExisting(skuCode);
+        return productService.isExisting(skuCodes);
     }
 }

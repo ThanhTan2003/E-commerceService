@@ -1,30 +1,32 @@
 package com.programmingtechie.order_service.dto;
 
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Builder
-public class OrderLineItemsDto
+public class OrderResponse
 {
-    private String id;
+    private List<OrderLineItemsDto> orderLineItemsDtos;
 
-    private String skuCode;
+    private String id;
 
     private String customer_id;
 
-    private BigDecimal unitPrice;
-
-    private Integer quantity;
+    private String status;
 
     private BigDecimal totalAmount;
+
+    private BigDecimal discount;
+
+    private BigDecimal total;
 
     private String note;
 }

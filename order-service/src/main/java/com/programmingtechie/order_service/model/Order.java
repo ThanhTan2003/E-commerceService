@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +36,10 @@ public class Order
 
     private BigDecimal totalAmount;
 
+    private BigDecimal discount;
+
+    private BigDecimal total;
+
     private String note;
 
     @OneToMany(cascade = CascadeType.ALL)
@@ -44,6 +50,10 @@ public class Order
         if (this.id == null) {
             this.id = UUID.randomUUID().toString();
         }
-        this.orderDate = LocalDateTime.now();
+        if (this.orderDate == null) {
+            // Lấy thời gian hiện tại ở múi giờ UTC+7
+            ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Bangkok"));
+            this.orderDate = zonedDateTime.toLocalDateTime();
+        }
     }
 }

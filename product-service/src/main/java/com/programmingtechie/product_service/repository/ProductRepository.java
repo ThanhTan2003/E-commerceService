@@ -14,7 +14,9 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, String> {
 
     List<Product> findBySkuCodeIn(List<String> skuCode);
-    boolean existsBySkuCode(String skuCode);
+    Boolean existsBySkuCode(String skuCode);
+
+    Product findAllBySkuCode(String skuCode);
 }
 
 // JpaRepository<Product, String>: La mot generic interface cua Spring Data JPA.

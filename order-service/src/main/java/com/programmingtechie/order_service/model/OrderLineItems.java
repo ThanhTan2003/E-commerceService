@@ -27,9 +27,14 @@ public class OrderLineItems
     @Column(length = 36)
     private String customer_id;
 
-    private BigDecimal price;
+    private BigDecimal unitPrice;
 
     private Integer quantity;
+
+    private BigDecimal totalAmount;
+
+    @Column(length = 255)
+    private String note;
 
     @PrePersist
     private void ensureId()

@@ -26,8 +26,10 @@ public class ShipmentHistoryService
     {
         ShipmentHistory shipmentHistory = ShipmentHistory.builder()
                 .skuCode(shipmentHistoryDto.getSkuCode())
+                .name(shipmentHistoryDto.getName())
                 .quantity(shipmentHistoryDto.getQuantity())
-                .inventory(inventoryRepository.findBySkuCode(shipmentHistoryDto.getSkuCode()))
+                .unitPrice(shipmentHistoryDto.getUnitPrice())
+                .totalPrice(shipmentHistoryDto.getTotalPrice())
                 .note(shipmentHistoryDto.getNote())
                 .build();
 

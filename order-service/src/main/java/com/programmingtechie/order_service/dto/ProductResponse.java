@@ -1,6 +1,5 @@
 package com.programmingtechie.order_service.dto;
 
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,19 +11,12 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Data
 @Builder
-public class OrderLineItemsDto
+public class ProductResponse
 {
     private String id;
-
     private String skuCode;
-
-    private String customer_id;
-
-    private BigDecimal unitPrice;
-
-    private Integer quantity;
-
-    private BigDecimal totalAmount;
-
-    private String note;
+    private Boolean isExisting;
+    private String name;
+    private BigDecimal price;
+    private String description;
 }

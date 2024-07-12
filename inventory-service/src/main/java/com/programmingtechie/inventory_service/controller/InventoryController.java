@@ -2,6 +2,7 @@ package com.programmingtechie.inventory_service.controller;
 
 import com.programmingtechie.inventory_service.dto.InventoryRequest;
 import com.programmingtechie.inventory_service.dto.InventoryResponse;
+import com.programmingtechie.inventory_service.dto.ShipmentHistoryDto;
 import com.programmingtechie.inventory_service.model.Inventory;
 import com.programmingtechie.inventory_service.service.InventoryService;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +38,9 @@ public class InventoryController
 
     @PostMapping("/update_quantity")
     @ResponseStatus(HttpStatus.OK)
-    public void updateQuantity(@RequestParam String skuCode, @RequestParam Integer quantity)
+    public void updateQuantity(@RequestBody ShipmentHistoryDto shipmentHistoryDto)
     {
-        inventoryService.updateQuantity(skuCode, quantity);
+        inventoryService.updateQuantity(shipmentHistoryDto);
     }
 
     @PostMapping

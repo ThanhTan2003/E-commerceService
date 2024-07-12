@@ -13,11 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class InventoryService
 {
     final InventoryRepository inventoryRepository;
@@ -43,56 +47,67 @@ public class InventoryService
                 .toList();
     }
 
-    public void createInventory(InventoryRequest inventoryRequest) {
-        List<ImportHistory> importHistories = inventoryRequest.getImportHistoryDtos()
-                .stream()
-                .map(importHistoryDto -> ImportHistory.builder()
-                        .skuCode(importHistoryDto.getSkuCode())
-                        .quantity(importHistoryDto.getQuantity())
-                        .note(importHistoryDto.getNote())
-                        .build())
-                .toList();
-
-        List<String> skuCodes = importHistories.stream()
-                .map(ImportHistory::getSkuCode)
-                .toList();
-
-        ProductResponse[] productResponses = webClientBuilder.build().get()
+    public List<ProductResponse> isProductExist(List<String> skuCodes)
+    {
+        ProductResponse [] productResponses = webClientBuilder.build().get()
                 .uri("http://product-service/api/product/existing",
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                        uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes).build())
                 .retrieve()
                 .bodyToMono(ProductResponse[].class)
                 .block();
 
-        if (productResponses == null) {
-            throw new IllegalArgumentException("Không thể kiểm tra sản phẩm.");
-        }
-
         for (ProductResponse productResponse : productResponses) {
-            if (!productResponse.isExisting()) {
-                throw new IllegalArgumentException("Mã sản phẩm " + productResponse.getSkuCode() + " không tồn tại.");
+            if (!productResponse.getIsExisting()) {
+                throw new IllegalStateException(
+                        String.format("Sản phẩm có mã skuCode %s không tồn tại. Vui lòng kiểm tra lại!",
+                                productResponse.getSkuCode()));
             }
         }
+        return Arrays.stream(productResponses).toList();
+    }
 
-        for (ImportHistory importHistory : importHistories) {
-            Inventory existingInventory = inventoryRepository.findBySkuCode(importHistory.getSkuCode());
-            if (existingInventory != null) {
-                existingInventory.setQuantity(existingInventory.getQuantity() + importHistory.getQuantity());
-                importHistory.setInventory(existingInventory); // Thiết lập thuộc tính inventory
-                existingInventory.getImportHistories().add(importHistory);
-                inventoryRepository.save(existingInventory);
-            } else {
-                Inventory newInventory = Inventory.builder()
-                        .skuCode(importHistory.getSkuCode())
-                        .quantity(importHistory.getQuantity())
-                        .importHistories(List.of(importHistory))
+    public void createInventory(InventoryRequest inventoryRequest)
+    {
+        List<String> skuCodes = inventoryRequest.getImportHistoryDtos().stream()
+                .map(
+                    ImportHistoryDto::getSkuCode
+                ).toList();
+
+        List<ProductResponse> productResponses = isProductExist(skuCodes);
+
+        Integer index = 0;
+
+        for(ImportHistoryDto importHistoryDto:inventoryRequest.getImportHistoryDtos())
+        {
+            if(inventoryRepository.findBySkuCode(importHistoryDto.getSkuCode()) == null)
+            {
+                Inventory inventory = Inventory.builder()
+                        .skuCode(importHistoryDto.getSkuCode())
+                        .quantity(importHistoryDto.getQuantity())
                         .build();
-                importHistory.setInventory(newInventory); // Thiết lập thuộc tính inventory
-                inventoryRepository.save(newInventory);
+                inventoryRepository.save(inventory);
             }
+            else
+            {
+                Inventory inventory = inventoryRepository.findBySkuCode(importHistoryDto.getSkuCode());
+                Integer quantity = inventory.getQuantity();
 
+                inventory.setQuantity(quantity + importHistoryDto.getQuantity());
+
+                inventoryRepository.save(inventory);
+            }
+            ImportHistory importHistory = ImportHistory.builder()
+                    .skuCode(importHistoryDto.getSkuCode())
+                    .name(productResponses.get(index).getName())
+                    .quantity(importHistoryDto.getQuantity())
+                    .note(importHistoryDto.getNote())
+                    .build();
             importHistoryService.save(importHistory);
+
+            index++;
         }
+
+
     }
 
 
@@ -112,22 +127,37 @@ public class InventoryService
     }
 
 
-    public void updateQuantity(String skuCode, Integer quantity) {
-        Inventory inventory = inventoryRepository.findBySkuCode(skuCode);
+    public void updateQuantity(ShipmentHistoryDto shipmentHistoryDto) {
+        Inventory inventory = inventoryRepository.findBySkuCode(shipmentHistoryDto.getSkuCode());
+        Integer quantity = shipmentHistoryDto.getQuantity();
+        String skuCode = shipmentHistoryDto.getSkuCode();
 
         if (inventory == null) {
             throw new IllegalArgumentException("Không tìm thấy mã SkuCode trong kho");
         }
 
+
         if (quantity <= 0 || inventory.getQuantity() < quantity) {
             throw new IllegalArgumentException("Số lượng trong kho không đủ hoặc số lượng không hợp lệ");
         }
 
+        List<String> skuCodes = new ArrayList<>();
+        skuCodes.add(skuCode);
+
+        ProductResponse productResponses = isProductExist(skuCodes).get(0);
+
         inventory.setQuantity(inventory.getQuantity() - quantity);
         inventoryRepository.save(inventory);
+
+        BigDecimal totalPrice = productResponses.getPrice().multiply(BigDecimal.valueOf(quantity));
+
         ShipmentHistoryDto shipmentHistory = ShipmentHistoryDto.builder()
                 .skuCode(skuCode)
+                .name(productResponses.getName())
                 .quantity(quantity)
+                .unitPrice(productResponses.getPrice())
+                .totalPrice(totalPrice)
+                .note(shipmentHistoryDto.getNote())
                 .build();
         shipmentHistoryService.createShipmentHistory(shipmentHistory);
     }

@@ -1,8 +1,7 @@
 package com.programmingtechie.order_service.service;
 
 
-import com.programmingtechie.order_service.dto.InventoryResponse;
-import com.programmingtechie.order_service.dto.OrderRequest;
+import com.programmingtechie.order_service.dto.*;
 import com.programmingtechie.order_service.event.OrderPlacedEvent;
 import com.programmingtechie.order_service.model.Order;
 import com.programmingtechie.order_service.model.OrderLineItems;
@@ -14,9 +13,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,15 +27,34 @@ public class OrderService
 {
     final OrderRepository orderRepository;
     final WebClient.Builder webClientBuilder;
-    //final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
-    public String placeOrder(OrderRequest orderRequest) {
+    public List<ProductResponse> isProductExist(List<String> skuCodes)
+    {
+        ProductResponse [] productResponses = webClientBuilder.build().get()
+                .uri("http://product-service/api/product/existing",
+                        uriBuilder -> uriBuilder.queryParam("skuCodes", skuCodes).build())
+                .retrieve()
+                .bodyToMono(ProductResponse[].class)
+                .block();
+
+        for (ProductResponse productResponse : productResponses) {
+            if (!productResponse.getIsExisting()) {
+                throw new IllegalStateException(
+                        String.format("Sản phẩm có mã skuCode %s không tồn tại. Vui lòng kiểm tra lại!",
+                                productResponse.getSkuCode()));
+            }
+        }
+        return Arrays.stream(productResponses).toList();
+    }
+
+    public OrderResponse placeOrder(OrderRequest orderRequest)
+    {
         List<OrderLineItems> orderLineItems = orderRequest.getOrderLineItemsDtos()
                 .stream()
                 .map(orderLineItemsDto -> OrderLineItems.builder()
                         .skuCode(orderLineItemsDto.getSkuCode())
-                        .price(orderLineItemsDto.getPrice())
                         .quantity(orderLineItemsDto.getQuantity())
+                        .note(orderLineItemsDto.getNote())
                         .build())
                 .toList();
 
@@ -63,30 +83,88 @@ public class OrderService
             InventoryResponse response = Arrays.stream(inventoryResponseArray)
                     .filter(r -> r.getSkuCode().equals(item.getSkuCode()))
                     .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm trong kho"));
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            String.format("Không tìm thấy sản phẩm có skuCode %s trong kho!", item.getSkuCode())
+                    ));
 
             if (!response.isInStock() || response.getQuantity() < item.getQuantity()) {
-                throw new IllegalArgumentException("Sản phẩm " + item.getSkuCode() + " không đủ số lượng tồn kho.");
+                throw new IllegalArgumentException("Sản phẩm có mã skuCode " + item.getSkuCode() + " không đủ số lượng tồn kho.");
             }
         }
 
+        BigDecimal totalAmount = BigDecimal.valueOf(0);
+
+        List<ProductResponse> productResponses = isProductExist(skuCodes);
+
+        Integer index = 0;
+
+        for (OrderLineItems orderLineItems1: orderLineItems)
+        {
+            BigDecimal unitPrice = productResponses.get(index).getPrice();
+            Integer quantity = orderLineItems1.getQuantity();
+            BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(quantity));
+            orderLineItems1.setUnitPrice(unitPrice);
+            orderLineItems1.setTotalAmount(total);
+
+            totalAmount = totalAmount.add(total);
+        }
+
+        BigDecimal discount = orderRequest.getDiscount();
+        if (discount == null) {
+            discount = BigDecimal.valueOf(0);
+        }
+
+        BigDecimal total = totalAmount.subtract(discount);
+
         Order order = Order.builder()
                 .orderLineItems(orderLineItems)
+                .customerId(orderRequest.getCustomer_id())
+                .totalAmount(totalAmount)
+                .discount(discount)
+                .total(total)
+                .status(orderRequest.getStatus())
+                .note(orderRequest.getNote())
                 .build();
 
         orderRepository.save(order);
 
         updateInventory(orderLineItems);
 
-        return "Đặt hàng thành công";
+        OrderResponse orderResponse = OrderResponse.builder()
+                .id(order.getId())
+                .orderLineItemsDtos(order.getOrderLineItems().stream()
+                        .map(orderLineItem -> OrderLineItemsDto.builder()
+                                .id(orderLineItem.getId())
+                                .skuCode(orderLineItem.getSkuCode())
+                                .customer_id(orderLineItem.getCustomer_id())
+                                .unitPrice(orderLineItem.getUnitPrice())
+                                .quantity(orderLineItem.getQuantity())
+                                .totalAmount(orderLineItem.getTotalAmount())
+                                .note(orderLineItem.getNote())
+                                .build()
+                        )
+                        .collect(Collectors.toList()))
+                .customer_id(order.getCustomerId())
+                .totalAmount(order.getTotalAmount())
+                .discount(order.getDiscount())
+                .total(order.getTotal())
+                .status(order.getStatus())
+                .note(order.getNote())
+                .build();
+        return orderResponse;
     }
+    private void updateInventory(List<OrderLineItems> orderLineItems)
+    {
 
-    private void updateInventory(List<OrderLineItems> orderLineItems) {
         orderLineItems.forEach(item -> {
+            ShipmentHistoryDto shipmentHistoryDto = ShipmentHistoryDto.builder()
+                    .skuCode(item.getSkuCode())
+                    .quantity(item.getQuantity())
+                    .note(item.getNote())
+                    .build();
             webClientBuilder.build().post()
-                    .uri("http://inventory-service/api/inventory/update_quantity",
-                            uriBuilder -> uriBuilder.queryParam("skuCode", item.getSkuCode())
-                                    .queryParam("quantity", item.getQuantity()).build())
+                    .uri("http://inventory-service/api/inventory/update_quantity")
+                    .bodyValue(shipmentHistoryDto)
                     .retrieve()
                     .bodyToMono(Void.class)
                     .block();
