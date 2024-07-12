@@ -2,21 +2,19 @@ package com.programmingtechie.order_service.service;
 
 
 import com.programmingtechie.order_service.dto.*;
-import com.programmingtechie.order_service.event.OrderPlacedEvent;
 import com.programmingtechie.order_service.model.Order;
 import com.programmingtechie.order_service.model.OrderLineItems;
 import com.programmingtechie.order_service.repository.OrderRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -169,5 +167,10 @@ public class OrderService
                     .bodyToMono(Void.class)
                     .block();
         });
+    }
+
+    public Optional<Order> orderDetails(String id)
+    {
+        return orderRepository.findById(id);
     }
 }

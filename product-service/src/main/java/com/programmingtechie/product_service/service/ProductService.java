@@ -40,7 +40,6 @@ public class ProductService {
     public List<ProductResponse> getAllProduct()
     {
         List<Product> products = productRepository.findAll();
-//        return products.stream().map(this::mapToProductResponse).toList();
 
         return products.stream().map( product -> ProductResponse.builder()
                 .id(product.getId())
@@ -51,15 +50,6 @@ public class ProductService {
                 .build()
         ).toList();
     }
-//    ProductResponse mapToProductResponse(Product product)
-//    {
-//        return ProductResponse.builder()
-//                .id(product.getId())
-//                .name(product.getName())
-//                .description(product.getDescription())
-//                .price(product.getPrice())
-//                .build();
-//    }
 
     public void updateProduct(String id, ProductRequest productRequest)
     {
