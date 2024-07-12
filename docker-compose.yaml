@@ -50,8 +50,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-product:5432/product-service
     ports:
-      - "8081:8080"
-#      - "8081:8081"
+      - "8081:8081"
     depends_on:
       - postgres-product
       - discovery-server
@@ -65,8 +64,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5432/order-service
     ports:
-      - "8082:8080"
-#      - "8082:8082"
+      - "8082:8082"
     depends_on:
       - postgres-order
       - discovery-server
@@ -80,8 +78,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-inventory:5432/inventory-service
     ports:
-      - "8083:8080"
-#      - "8083:8083"
+      - "8083:8083"
     depends_on:
       - postgres-inventory
       - discovery-server

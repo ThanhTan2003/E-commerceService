@@ -29,6 +29,9 @@ public class Inventory
     @Column(nullable = false)
     private Integer quantity;
 
+    @Version
+    private Long version;
+
     @PrePersist
     private void ensureId() {
         if (this.id == null) {

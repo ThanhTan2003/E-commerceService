@@ -5,6 +5,7 @@ import com.programmingtechie.inventory_service.model.ImportHistory;
 import com.programmingtechie.inventory_service.model.Inventory;
 import com.programmingtechie.inventory_service.model.ShipmentHistory;
 import com.programmingtechie.inventory_service.repository.InventoryRepository;
+import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -127,38 +129,42 @@ public class InventoryService
     }
 
 
+    @Transactional
     public void updateQuantity(ShipmentHistoryDto shipmentHistoryDto) {
         Inventory inventory = inventoryRepository.findBySkuCode(shipmentHistoryDto.getSkuCode());
-        Integer quantity = shipmentHistoryDto.getQuantity();
-        String skuCode = shipmentHistoryDto.getSkuCode();
 
         if (inventory == null) {
             throw new IllegalArgumentException("Không tìm thấy mã SkuCode trong kho");
         }
 
-
+        Integer quantity = shipmentHistoryDto.getQuantity();
         if (quantity <= 0 || inventory.getQuantity() < quantity) {
             throw new IllegalArgumentException("Số lượng trong kho không đủ hoặc số lượng không hợp lệ");
         }
 
-        List<String> skuCodes = new ArrayList<>();
-        skuCodes.add(skuCode);
-
-        ProductResponse productResponses = isProductExist(skuCodes).get(0);
-
+        // Cập nhật số lượng tồn kho
         inventory.setQuantity(inventory.getQuantity() - quantity);
-        inventoryRepository.save(inventory);
 
-        BigDecimal totalPrice = productResponses.getPrice().multiply(BigDecimal.valueOf(quantity));
+        try {
+            inventoryRepository.save(inventory);
+        } catch (OptimisticLockException e) {
+            throw new IllegalStateException("Có sự thay đổi về dữ liệu kho trong khi xử lý. Vui lòng thử lại.");
+        }
 
+        // Lưu thông tin lịch sử xuất hàng
+        List<String> skuCodes = Collections.singletonList(shipmentHistoryDto.getSkuCode());
+        ProductResponse productResponse = isProductExist(skuCodes).get(0);
+
+        BigDecimal totalPrice = productResponse.getPrice().multiply(BigDecimal.valueOf(quantity));
         ShipmentHistoryDto shipmentHistory = ShipmentHistoryDto.builder()
-                .skuCode(skuCode)
-                .name(productResponses.getName())
+                .skuCode(shipmentHistoryDto.getSkuCode())
+                .name(productResponse.getName())
                 .quantity(quantity)
-                .unitPrice(productResponses.getPrice())
+                .unitPrice(productResponse.getPrice())
                 .totalPrice(totalPrice)
                 .note(shipmentHistoryDto.getNote())
                 .build();
+
         shipmentHistoryService.createShipmentHistory(shipmentHistory);
     }
 }
